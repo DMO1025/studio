@@ -39,9 +39,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const getUsers = (): User[] => {
     try {
         const users = localStorage.getItem('photoflow_users');
-        return users ? JSON.parse(users) : [{ email: 'usuario@photoflow.com', password: 'senha123' }];
+        return users ? JSON.parse(users) : [{ email: 'usuario@photoflow.com', password: 'senha123', profileComplete: true }];
     } catch {
-        return [{ email: 'usuario@photoflow.com', password: 'senha123' }];
+        return [{ email: 'usuario@photoflow.com', password: 'senha123', profileComplete: true }];
     }
   };
 
@@ -107,7 +107,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userIndex = allUsers.findIndex(u => u.email === user.email);
         if (userIndex !== -1) {
             const fullUserRecord = allUsers[userIndex];
-            allUsers[userIndex] = { ...fullUserRecord, ...profileData, profileComplete: true };
+            // Make sure to retain password when updating
+            const password = fullUserRecord.password;
+            allUsers[userIndex] = { ...fullUserRecord, ...profileData, password, profileComplete: true };
             saveUsers(allUsers);
         }
     } catch (error) {
