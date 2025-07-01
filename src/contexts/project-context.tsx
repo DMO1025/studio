@@ -28,22 +28,24 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   React.useEffect(() => {
-    if (!isAuthenticated || !user) {
-      setProjects([]); // Clear projects if user logs out
-      setIsLoading(!isAuthenticated);
-      return;
-    }
+    if (isAuthenticated && user) {
+        const storageKey = getStorageKey();
+        if (!storageKey) {
+            setIsLoading(false);
+            return;
+        };
 
-    const storageKey = getStorageKey();
-    if (!storageKey) return;
-
-    try {
-      const item = window.localStorage.getItem(storageKey);
-      setProjects(item ? JSON.parse(item) : MOCK_PROJECTS);
-    } catch (error) {
-      console.error(error);
-      setProjects(MOCK_PROJECTS);
-    } finally {
+        try {
+            const item = window.localStorage.getItem(storageKey);
+            setProjects(item ? JSON.parse(item) : MOCK_PROJECTS);
+        } catch (error) {
+            console.error(error);
+            setProjects(MOCK_PROJECTS);
+        } finally {
+            setIsLoading(false);
+        }
+    } else {
+        setProjects([]);
         setIsLoading(false);
     }
   }, [user, isAuthenticated, getStorageKey]);
