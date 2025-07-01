@@ -1,10 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
-import { PlusCircle, Camera, LogOut, ShieldCheck, LayoutDashboard, Workflow, Calendar, DollarSign, Image as ImageIcon } from 'lucide-react';
+import { PlusCircle, Camera, LogOut, ShieldCheck, LayoutDashboard, Workflow, Calendar, DollarSign, Image as ImageIcon, User as UserIcon } from 'lucide-react';
 import { CreateProjectDialog } from './create-project-dialog';
 import { Button } from './ui/button';
 import { useAuth } from '@/contexts/auth-context';
@@ -23,6 +23,7 @@ const adminNavItem = { href: '/admin', label: 'Admin', icon: ShieldCheck };
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
   const [isCreateProjectOpen, setCreateProjectOpen] = React.useState(false);
   
@@ -69,15 +70,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                             <AvatarFallback>{user?.email?.[0].toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className='text-left'>
-                            <p className="text-sm font-medium truncate max-w-[120px]">{user?.email}</p>
+                            <p className="text-sm font-medium truncate max-w-[120px]">{user?.name || user?.email}</p>
                             <p className="text-xs text-muted-foreground">online</p>
                         </div>
                     </div>
                   </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="end" className="w-56">
-                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+                <DropdownMenuLabel>{user?.name || user?.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/account')}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Minha Conta</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={logout} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair

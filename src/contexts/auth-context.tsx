@@ -11,6 +11,7 @@ interface AuthContextType {
   register: (email: string, pass: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   getUsers: () => User[];
+  updateProfile: (profileData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,13 +59,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const foundUser = users.find(u => u.email === email && u.password === pass);
     
     if (foundUser) {
-        const currentUser = { email: foundUser.email };
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password, ...userToStore } = foundUser;
         try {
-            localStorage.setItem('photoflow_user', JSON.stringify(currentUser));
+            localStorage.setItem('photoflow_user', JSON.stringify(userToStore));
         } catch (error) {
             console.error('Could not access local storage:', error);
         }
-        setUser(currentUser);
+        setUser(userToStore);
         setIsLoading(false);
         return true;
     }
@@ -79,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, message: 'Este e-mail já está em uso.' };
     }
     
-    const newUser: User = { email, password: pass };
+    const newUser: User = { email, password: pass, profileComplete: false, name: '', phone: '', company: '' };
     saveUsers([...users, newUser]);
 
     return { success: true, message: 'Cadastro realizado com sucesso!' };
@@ -93,11 +95,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setUser(null);
   };
+  
+  const updateProfile = (profileData: Partial<User>) => {
+    if (!user) return;
+
+    const updatedUser = { ...user, ...profileData, profileComplete: true };
+    setUser(updatedUser);
+    try {
+        localStorage.setItem('photoflow_user', JSON.stringify(updatedUser));
+        const allUsers = getUsers();
+        const userIndex = allUsers.findIndex(u => u.email === user.email);
+        if (userIndex !== -1) {
+            const fullUserRecord = allUsers[userIndex];
+            allUsers[userIndex] = { ...fullUserRecord, ...profileData, profileComplete: true };
+            saveUsers(allUsers);
+        }
+    } catch (error) {
+        console.error('Could not update profile in local storage:', error);
+    }
+  };
+
 
   const isAuthenticated = !isLoading && !!user;
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, register, logout, getUsers }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, register, logout, getUsers, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

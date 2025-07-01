@@ -13,7 +13,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, login } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,10 +25,15 @@ export default function RegisterPage() {
     const result = await register(email, password);
     if (result.success) {
       toast({
-        title: 'Sucesso!',
-        description: result.message,
+        title: 'Cadastro Realizado!',
+        description: 'Por favor, complete seu perfil.',
       });
-      router.push('/login');
+      const loginSuccess = await login(email, password);
+      if (loginSuccess) {
+        router.push('/account');
+      } else {
+        router.push('/login');
+      }
     } else {
       toast({
         variant: 'destructive',
