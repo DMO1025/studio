@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
@@ -12,6 +13,7 @@ interface AuthContextType {
   logout: () => void;
   getUsers: () => User[];
   updateProfile: (profileData: Partial<User>) => void;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -117,11 +119,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+    if (!user) return { success: false, message: 'Usuário não autenticado.' };
+
+    const users = getUsers();
+    const userIndex = users.findIndex(u => u.email === user.email);
+    
+    if (userIndex === -1) {
+        return { success: false, message: 'Usuário não encontrado.' };
+    }
+    
+    const storedUser = users[userIndex];
+    if (storedUser.password !== currentPassword) {
+        return { success: false, message: 'A senha atual está incorreta.' };
+    }
+    
+    users[userIndex].password = newPassword;
+    saveUsers(users);
+    
+    return { success: true, message: 'Senha alterada com sucesso!' };
+  };
+
 
   const isAuthenticated = !isLoading && !!user;
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, register, logout, getUsers, updateProfile }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, register, logout, getUsers, updateProfile, changePassword }}>
       {children}
     </AuthContext.Provider>
   );
