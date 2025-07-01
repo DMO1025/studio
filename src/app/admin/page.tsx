@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { TestTube2, DatabaseZap } from 'lucide-react';
+import { TestTube2, DatabaseZap, Loader2 } from 'lucide-react';
 import type { Project, User } from '@/types';
+import { testDbConnection, importJsonToMysql } from './actions';
 
 interface AdminUserSummary {
   email: string;
@@ -20,6 +21,8 @@ export default function AdminPage() {
   const { getUsers } = useAuth();
   const { toast } = useToast();
   const [userSummaries, setUserSummaries] = React.useState<AdminUserSummary[]>([]);
+  const [isTesting, setIsTesting] = React.useState(false);
+  const [isImporting, setIsImporting] = React.useState(false);
 
   // States for placeholder MySQL form
   const [dbConfig, setDbConfig] = React.useState({
@@ -56,19 +59,46 @@ export default function AdminPage() {
     setUserSummaries(summaries);
   }, [getUsers]);
 
-  const handleTestConnection = (e: React.FormEvent) => {
+  const handleTestConnection = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: 'Teste de Conexão Simulado',
-      description: 'Funcionalidade pronta para ser conectada ao backend do MySQL.',
-    });
+    setIsTesting(true);
+    try {
+      const result = await testDbConnection({
+        ...dbConfig,
+        port: Number(dbConfig.port)
+      });
+
+      if (result.success) {
+        toast({
+          title: 'Conexão Bem-Sucedida!',
+          description: 'A conexão com o banco de dados MySQL foi estabelecida com sucesso.',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Falha na Conexão',
+          description: result.error || 'Não foi possível conectar ao banco de dados.',
+        });
+      }
+    } catch (error) {
+       toast({
+          variant: 'destructive',
+          title: 'Erro Inesperado',
+          description: 'Ocorreu um erro ao tentar conectar. Verifique o console para mais detalhes.',
+        });
+    } finally {
+        setIsTesting(false);
+    }
   };
   
-  const handleMysqlImport = () => {
-    toast({
-      title: 'Importação para MySQL Simulada',
-      description: 'Funcionalidade pronta para importar o JSON para o banco de dados.',
+  const handleMysqlImport = async () => {
+    setIsImporting(true);
+    const result = await importJsonToMysql();
+     toast({
+      title: 'Importação para MySQL',
+      description: result.message,
     });
+    setIsImporting(false);
   };
 
   return (
@@ -127,8 +157,12 @@ export default function AdminPage() {
               <Label htmlFor="db-name">Banco de Dados</Label>
               <Input id="db-name" value={dbConfig.database} onChange={(e) => setDbConfig({...dbConfig, database: e.target.value})} placeholder="photoflow_db" />
             </div>
-            <Button type="submit" variant="outline" className="w-full">
-              <TestTube2 className="mr-2 h-4 w-4" />
+            <Button type="submit" variant="outline" className="w-full" disabled={isTesting}>
+              {isTesting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                  <TestTube2 className="mr-2 h-4 w-4" />
+              )}
               Testar Conexão
             </Button>
           </form>
@@ -143,8 +177,12 @@ export default function AdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <Button onClick={handleMysqlImport} variant="secondary">
-              <DatabaseZap className="mr-2 h-4 w-4" />
+            <Button onClick={handleMysqlImport} variant="secondary" disabled={isImporting}>
+               {isImporting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                  <DatabaseZap className="mr-2 h-4 w-4" />
+              )}
               Importar JSON para MySQL
             </Button>
         </CardContent>
