@@ -42,7 +42,7 @@ export default function PublicPortfolioPage() {
         throw new Error('Portfólio não encontrado.');
       }
       
-      const projectsJson = localStorage.getItem(`photo-flow-projects-v2-${portfolioUser.email}`);
+      const projectsJson = localStorage.getItem(`photo-flow-projects-${portfolioUser.email}`);
       const allProjects: Project[] = projectsJson ? JSON.parse(projectsJson) : [];
       
       const completedProjects = allProjects.filter(p => p.status === 'Concluído');

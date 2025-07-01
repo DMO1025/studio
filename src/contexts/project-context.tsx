@@ -24,7 +24,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = React.useState(true);
 
   const getStorageKey = React.useCallback(() => {
-    return user ? `photo-flow-projects-v2-${user.email}` : null;
+    return user ? `photo-flow-projects-${user.email}` : null;
   }, [user]);
 
   React.useEffect(() => {
