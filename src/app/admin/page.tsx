@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, TestTube2, DatabaseZap } from 'lucide-react';
+import { TestTube2, DatabaseZap } from 'lucide-react';
 import type { Project, User } from '@/types';
 
 interface AdminUserSummary {
@@ -20,7 +20,6 @@ interface AdminUserSummary {
 export default function AdminPage() {
   const { getUsers } = useAuth();
   const { toast } = useToast();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [userSummaries, setUserSummaries] = React.useState<AdminUserSummary[]>([]);
 
   // States for placeholder MySQL form
@@ -60,25 +59,6 @@ export default function AdminPage() {
     setUserSummaries(summaries);
   }, [getUsers]);
 
-  const handleExport = () => {
-    toast({
-      title: 'Funcionalidade em Desenvolvimento',
-      description: 'A exportação geral de dados estará disponível em breve.',
-    });
-  };
-
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-     toast({
-      title: 'Funcionalidade em Desenvolvimento',
-      description: 'A importação de dados estará disponível em breve.',
-    });
-    event.target.value = '';
-  };
-  
   const handleTestConnection = (e: React.FormEvent) => {
     e.preventDefault();
     toast({
@@ -90,7 +70,7 @@ export default function AdminPage() {
   const handleMysqlImport = () => {
     toast({
       title: 'Importação para MySQL Simulada',
-      description: 'Funcionalidade pronta para importar o JSON para o banco de dados.',
+      description: 'Funcionalidade pronta para importar o JSON para o banco de dados. Um arquivo de backup seria necessário.',
     });
   };
 
@@ -98,15 +78,8 @@ export default function AdminPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Painel de Administração</CardTitle>
-          <CardDescription>Gerencie usuários, dados e configurações do sistema.</CardDescription>
-        </CardHeader>
-      </Card>
-      
-      <Card>
-        <CardHeader>
           <CardTitle>Gerenciamento de Usuários</CardTitle>
-          <CardDescription>Visualize todos os usuários cadastrados e suas atividades.</CardDescription>
+          <CardDescription>Visualize todos os usuários cadastrados e a receita gerada.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -135,7 +108,7 @@ export default function AdminPage() {
           <CardHeader>
             <CardTitle>Configuração do Banco de Dados (MySQL)</CardTitle>
             <CardDescription>
-              Insira os dados de conexão para o banco de dados principal. Esta é uma configuração para o futuro.
+              Insira os dados de conexão para o banco de dados principal.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -170,35 +143,19 @@ export default function AdminPage() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Gerenciamento e Migração de Dados</CardTitle>
+            <CardTitle>Migração de Dados para MySQL</CardTitle>
             <CardDescription>
-              Faça backup (exportar) ou restaure (importar) os dados do sistema.
+              Use um arquivo de backup JSON para popular o banco de dados MySQL configurado.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
              <div className="p-4 border rounded-lg space-y-2">
-                <h4 className="font-semibold">Backup Local (Failover)</h4>
-                <p className="text-sm text-muted-foreground">Exporte todos os dados dos usuários para um arquivo JSON como backup.</p>
-                 <Button onClick={handleExport}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Exportar Tudo para JSON
-                </Button>
-             </div>
-             <div className="p-4 border rounded-lg space-y-2">
-                <h4 className="font-semibold">Migração para MySQL</h4>
-                <p className="text-sm text-muted-foreground">Use um arquivo de backup JSON para popular o banco de dados MySQL configurado.</p>
+                <p className="text-sm text-muted-foreground">Esta ação irá importar os dados de um arquivo JSON de backup para o banco de dados MySQL.</p>
                 <Button onClick={handleMysqlImport} variant="secondary">
                   <DatabaseZap className="mr-2 h-4 w-4" />
                   Importar JSON para MySQL
                 </Button>
              </div>
-            <Input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept="application/json"
-            />
           </CardContent>
         </Card>
       </div>
