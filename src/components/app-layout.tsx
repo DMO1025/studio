@@ -4,20 +4,14 @@ import * as React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
-import { LayoutDashboard, KanbanSquare, CalendarDays, TrendingUp, PlusCircle, Camera, ImageIcon, LogOut, ShieldCheck } from 'lucide-react';
+import { PlusCircle, Camera, LogOut, ShieldCheck } from 'lucide-react';
 import { CreateProjectDialog } from './create-project-dialog';
 import { Button } from './ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from './ui/dropdown-menu';
 
-const navItems = [
-  { href: '/', label: 'Painel', icon: LayoutDashboard },
-  { href: '/workflow', label: 'Fluxo de Trabalho', icon: KanbanSquare },
-  { href: '/calendar', label: 'Calendário', icon: CalendarDays },
-  { href: '/revenue', label: 'Receita', icon: TrendingUp },
-  { href: '/gallery', label: 'Galeria', icon: ImageIcon },
-];
+const navItems: { href: string; label: string; icon: React.ElementType }[] = [];
 
 const adminNavItem = { href: '/admin', label: 'Admin', icon: ShieldCheck };
 
