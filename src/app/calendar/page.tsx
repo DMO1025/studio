@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Project } from '@/types';
 import { format, parseISO, isSameDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function CalendarPage() {
@@ -34,6 +35,7 @@ export default function CalendarPage() {
               selected={selectedDate}
               onSelect={setSelectedDate}
               className="w-full"
+              locale={ptBR}
               modifiers={{
                 project: projectDates,
               }}
@@ -51,7 +53,7 @@ export default function CalendarPage() {
         <Card className="h-full">
           <CardHeader>
             <CardTitle>
-              {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : 'Select a date'}
+              {selectedDate ? format(selectedDate, 'd \'de\' MMMM, yyyy', { locale: ptBR }) : 'Selecione uma data'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -68,7 +70,7 @@ export default function CalendarPage() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-muted-foreground text-center pt-8">No projects scheduled for this day.</p>
+                  <p className="text-muted-foreground text-center pt-8">Nenhum projeto agendado para este dia.</p>
                 )}
               </div>
             </ScrollArea>

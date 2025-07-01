@@ -6,7 +6,7 @@ import ProjectCard from '@/components/project-card';
 import type { Project, ProjectStatus } from '@/types';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
-const columns: ProjectStatus[] = ['Backlog', 'In Progress', 'Complete'];
+const columns: ProjectStatus[] = ['Pendente', 'Em Andamento', 'Concluído'];
 
 export default function WorkflowPage() {
   const { projects } = useProjects();
@@ -34,7 +34,7 @@ export default function WorkflowPage() {
                 ))
               ) : (
                 <div className="text-center py-10 border-2 border-dashed rounded-lg text-muted-foreground">
-                  No projects in this stage.
+                  Nenhum projeto nesta fase.
                 </div>
               )}
             </div>

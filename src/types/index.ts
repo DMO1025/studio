@@ -1,6 +1,6 @@
-export type ProjectStatus = 'Backlog' | 'In Progress' | 'Complete';
-export type ProjectStage = 'Shooting' | 'Editing' | 'Delivery';
-export type PaymentStatus = 'Paid' | 'Unpaid' | 'Partially Paid';
+export type ProjectStatus = 'Pendente' | 'Em Andamento' | 'Concluído';
+export type ProjectStage = 'Sessão Fotográfica' | 'Edição' | 'Entrega';
+export type PaymentStatus = 'Pago' | 'Não Pago' | 'Parcialmente Pago';
 
 export interface Project {
   id: string;
@@ -15,4 +15,5 @@ export interface Project {
   paymentStatus: PaymentStatus;
   description: string;
   imageUrl?: string;
+  galleryImages?: string[];
 }

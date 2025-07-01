@@ -18,20 +18,25 @@ import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import { CalendarIcon } from 'lucide-react';
 import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import type { PaymentStatus, ProjectStage, ProjectStatus } from '@/types';
 
+const projectStatuses: ProjectStatus[] = ['Pendente', 'Em Andamento', 'Concluído'];
+const projectStages: ProjectStage[] = ['Sessão Fotográfica', 'Edição', 'Entrega'];
+const paymentStatuses: PaymentStatus[] = ['Não Pago', 'Parcialmente Pago', 'Pago'];
+
 const formSchema = z.object({
-  description: z.string().min(10, 'Please provide a more detailed description.'),
-  clientName: z.string().min(1, 'Client name is required.'),
-  date: z.date({ required_error: 'A date is required.' }),
-  location: z.string().min(1, 'Location is required.'),
-  photographer: z.string().min(1, 'Photographer is required.'),
-  income: z.coerce.number().min(0, 'Income must be a positive number.'),
-  expenses: z.coerce.number().min(0, 'Expenses must be a positive number.'),
-  status: z.enum(['Backlog', 'In Progress', 'Complete']),
-  stage: z.enum(['Shooting', 'Editing', 'Delivery']),
-  paymentStatus: z.enum(['Paid', 'Unpaid', 'Partially Paid']),
+  description: z.string().min(10, 'Por favor, forneça uma descrição mais detalhada.'),
+  clientName: z.string().min(1, 'O nome do cliente é obrigatório.'),
+  date: z.date({ required_error: 'A data é obrigatória.' }),
+  location: z.string().min(1, 'O local é obrigatório.'),
+  photographer: z.string().min(1, 'O fotógrafo é obrigatório.'),
+  income: z.coerce.number().min(0, 'A receita deve ser um número positivo.'),
+  expenses: z.coerce.number().min(0, 'As despesas devem ser um número positivo.'),
+  status: z.enum(projectStatuses),
+  stage: z.enum(projectStages),
+  paymentStatus: z.enum(paymentStatuses),
 });
 
 type CreateProjectDialogProps = {
@@ -53,16 +58,16 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
       photographer: '',
       income: 0,
       expenses: 0,
-      status: 'Backlog',
-      stage: 'Shooting',
-      paymentStatus: 'Unpaid',
+      status: 'Pendente',
+      stage: 'Sessão Fotográfica',
+      paymentStatus: 'Não Pago',
     },
   });
 
   const handleExtract = async () => {
     const description = form.getValues('description');
     if (!description) {
-      form.setError('description', { message: 'Please enter a description first.' });
+      form.setError('description', { message: 'Por favor, insira uma descrição primeiro.' });
       return;
     }
     setIsExtracting(true);
@@ -75,16 +80,16 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
       if (!isNaN(parsedDate.getTime())) {
         form.setValue('date', parsedDate);
       }
-      toast({ title: 'Details Extracted!', description: 'Project details have been populated from the description.' });
+      toast({ title: 'Detalhes Extraídos!', description: 'Os detalhes do projeto foram preenchidos a partir da descrição.' });
     } else {
-      toast({ variant: 'destructive', title: 'Extraction Failed', description: result.error });
+      toast({ variant: 'destructive', title: 'Falha na Extração', description: result.error });
     }
     setIsExtracting(false);
   };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     addProject({ ...values, date: values.date.toISOString() });
-    toast({ title: 'Project Created', description: `Project for ${values.clientName} has been added.` });
+    toast({ title: 'Projeto Criado', description: `O projeto para ${values.clientName} foi adicionado.` });
     form.reset();
     onOpenChange(false);
   };
@@ -93,8 +98,8 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
-          <DialogDescription>Fill in the details below. Use the AI extractor for a quick start!</DialogDescription>
+          <DialogTitle>Criar Novo Projeto</DialogTitle>
+          <DialogDescription>Preencha os detalhes abaixo. Use o extrator de IA para um início rápido!</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
@@ -104,9 +109,9 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Project Description</FormLabel>
+                    <FormLabel>Descrição do Projeto</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., Wedding photoshoot for The Smiths on October 26th at Central Park with Jane Doe..." {...field} />
+                      <Textarea placeholder="Ex: Sessão de fotos de casamento para Os Smiths em 26 de outubro no Central Park com Jane Doe..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -118,13 +123,13 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                 ) : (
                   <Wand2 className="mr-2 h-4 w-4" />
                 )}
-                Extract Details with AI
+                Extrair Detalhes com IA
               </Button>
             </div>
             
             <FormField control={form.control} name="clientName" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Client Name</FormLabel>
+                  <FormLabel>Nome do Cliente</FormLabel>
                   <FormControl><Input {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -132,7 +137,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
 
             <FormField control={form.control} name="photographer" render={({ field }) => (
               <FormItem>
-                <FormLabel>Photographer</FormLabel>
+                <FormLabel>Fotógrafo(a)</FormLabel>
                 <FormControl><Input {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -140,7 +145,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
 
             <FormField control={form.control} name="location" render={({ field }) => (
               <FormItem>
-                <FormLabel>Location</FormLabel>
+                <FormLabel>Local</FormLabel>
                 <FormControl><Input {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -148,18 +153,18 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
 
             <FormField control={form.control} name="date" render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Date</FormLabel>
+                <FormLabel>Data</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}>
-                        {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                        {field.value ? format(field.value, 'PPP', { locale: ptBR }) : <span>Escolha uma data</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date('1990-01-01')} initialFocus />
+                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} locale={ptBR} disabled={(date) => date < new Date('1990-01-01')} initialFocus />
                   </PopoverContent>
                 </Popover>
                 <FormMessage />
@@ -168,7 +173,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
             
             <FormField control={form.control} name="income" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Income ($)</FormLabel>
+                  <FormLabel>Receita (R$)</FormLabel>
                   <FormControl><Input type="number" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -176,7 +181,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
 
             <FormField control={form.control} name="expenses" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Expenses ($)</FormLabel>
+                  <FormLabel>Despesas (R$)</FormLabel>
                   <FormControl><Input type="number" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -188,7 +193,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {(['Backlog', 'In Progress', 'Complete'] as ProjectStatus[]).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      {projectStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -197,11 +202,11 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
 
             <FormField control={form.control} name="stage" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Stage</FormLabel>
+                  <FormLabel>Fase</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {(['Shooting', 'Editing', 'Delivery'] as ProjectStage[]).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      {projectStages.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -211,11 +216,11 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
             <div className="md:col-span-2">
                 <FormField control={form.control} name="paymentStatus" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Payment Status</FormLabel>
+                      <FormLabel>Status do Pagamento</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
-                          {(['Unpaid', 'Partially Paid', 'Paid'] as PaymentStatus[]).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          {paymentStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -224,8 +229,8 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
             </div>
 
             <DialogFooter className="md:col-span-2 mt-4">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit">Save Project</Button>
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button type="submit">Salvar Projeto</Button>
             </DialogFooter>
           </form>
         </Form>
