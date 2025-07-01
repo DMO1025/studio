@@ -4,7 +4,7 @@ import * as React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
-import { LayoutDashboard, KanbanSquare, CalendarDays, TrendingUp, PlusCircle, Camera, ImageIcon, LogOut } from 'lucide-react';
+import { LayoutDashboard, KanbanSquare, CalendarDays, TrendingUp, PlusCircle, Camera, ImageIcon, LogOut, ShieldCheck } from 'lucide-react';
 import { CreateProjectDialog } from './create-project-dialog';
 import { Button } from './ui/button';
 import { useAuth } from '@/contexts/auth-context';
@@ -19,12 +19,17 @@ const navItems = [
   { href: '/gallery', label: 'Galeria', icon: ImageIcon },
 ];
 
+const adminNavItem = { href: '/admin', label: 'Admin', icon: ShieldCheck };
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [isCreateProjectOpen, setCreateProjectOpen] = React.useState(false);
+  
+  const isAdmin = user?.email === 'usuario@photoflow.com';
+  const finalNavItems = isAdmin ? [...navItems, adminNavItem] : navItems;
 
-  const currentPage = navItems.find((item) => pathname.startsWith(item.href) && (item.href === '/' ? pathname.length === 1 : true))?.label || 'PhotoFlow';
+  const currentPage = finalNavItems.find((item) => pathname.startsWith(item.href) && (item.href === '/' ? pathname.length === 1 : true))?.label || 'PhotoFlow';
 
   return (
     <SidebarProvider>
@@ -39,7 +44,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {navItems.map((item) => (
+            {finalNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton
@@ -60,11 +65,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <Button variant="ghost" className="justify-start w-full p-2 h-auto">
                     <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src="https://i.pravatar.cc/40?u=user" />
-                            <AvatarFallback>U</AvatarFallback>
+                            <AvatarImage src={`https://i.pravatar.cc/40?u=${user?.email}`} />
+                            <AvatarFallback>{user?.email?.[0].toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className='text-left'>
-                            <p className="text-sm font-medium">Usuário</p>
+                            <p className="text-sm font-medium truncate max-w-[120px]">{user?.email}</p>
                             <p className="text-xs text-muted-foreground">online</p>
                         </div>
                     </div>

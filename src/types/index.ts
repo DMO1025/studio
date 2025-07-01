@@ -17,3 +17,8 @@ export interface Project {
   imageUrl?: string;
   galleryImages?: string[];
 }
+
+export interface User {
+  email: string;
+  password?: string; // Password should not be stored in plaintext in a real app
+}

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import type { Project, ProjectStatus } from '@/types';
 import { MOCK_PROJECTS } from '@/lib/mock-data';
+import { useAuth } from './auth-context';
 
 interface ProjectContextType {
   projects: Project[];
@@ -12,33 +13,53 @@ interface ProjectContextType {
   updateProject: (project: Project) => void;
   addGalleryImage: (projectId: string, imageUrl: string) => void;
   getProjectById: (projectId: string) => Project | undefined;
+  importProjects: (newProjects: Project[]) => void;
 }
 
 const ProjectContext = React.createContext<ProjectContextType | undefined>(undefined);
 
-const isServer = typeof window === 'undefined';
-
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
-  const [projects, setProjects] = React.useState<Project[]>(() => {
-    if (isServer) {
-      return MOCK_PROJECTS;
-    }
-    try {
-      const item = window.localStorage.getItem('photo-flow-projects');
-      return item ? JSON.parse(item) : MOCK_PROJECTS;
-    } catch (error) {
-      console.error(error);
-      return MOCK_PROJECTS;
-    }
-  });
+  const { user, isAuthenticated } = useAuth();
+  const [projects, setProjects] = React.useState<Project[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  const getStorageKey = React.useCallback(() => {
+    return user ? `photo-flow-projects-${user.email}` : null;
+  }, [user]);
 
   React.useEffect(() => {
+    if (!isAuthenticated || !user) {
+      setProjects([]); // Clear projects if user logs out
+      setIsLoading(!isAuthenticated);
+      return;
+    }
+
+    const storageKey = getStorageKey();
+    if (!storageKey) return;
+
     try {
-      window.localStorage.setItem('photo-flow-projects', JSON.stringify(projects));
+      const item = window.localStorage.getItem(storageKey);
+      setProjects(item ? JSON.parse(item) : MOCK_PROJECTS);
+    } catch (error) {
+      console.error(error);
+      setProjects(MOCK_PROJECTS);
+    } finally {
+        setIsLoading(false);
+    }
+  }, [user, isAuthenticated, getStorageKey]);
+
+  React.useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    
+    const storageKey = getStorageKey();
+    if (!storageKey) return;
+
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(projects));
     } catch (error) {
       console.error(error);
     }
-  }, [projects]);
+  }, [projects, isLoading, isAuthenticated, getStorageKey]);
 
 
   const addProject = (project: Omit<Project, 'id'>) => {
@@ -78,9 +99,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     return projects.find(p => p.id === projectId);
   }
 
+  const importProjects = (newProjects: Project[]) => {
+    setProjects(newProjects);
+  }
+
   return (
-    <ProjectContext.Provider value={{ projects, addProject, updateProjectStatus, deleteProject, updateProject, addGalleryImage, getProjectById }}>
-      {children}
+    <ProjectContext.Provider value={{ projects, addProject, updateProjectStatus, deleteProject, updateProject, addGalleryImage, getProjectById, importProjects }}>
+      {!isLoading ? children : null}
     </ProjectContext.Provider>
   );
 }

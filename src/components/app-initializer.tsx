@@ -6,6 +6,8 @@ import { useEffect } from 'react';
 import { AppLayout } from './app-layout';
 import { Loader2 } from 'lucide-react';
 
+const PUBLIC_ROUTES = ['/login', '/register'];
+
 export function AppInitializer({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
@@ -14,14 +16,16 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (isLoading) return;
 
-        if (!isAuthenticated && pathname !== '/login') {
+        const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+
+        if (!isAuthenticated && !isPublicRoute) {
             router.push('/login');
-        } else if (isAuthenticated && pathname === '/login') {
+        } else if (isAuthenticated && isPublicRoute) {
             router.push('/');
         }
     }, [isLoading, isAuthenticated, pathname, router]);
     
-    if (pathname === '/login') {
+    if (PUBLIC_ROUTES.includes(pathname)) {
         return <main className="flex min-h-screen w-full items-center justify-center bg-background p-4">{children}</main>;
     }
 
