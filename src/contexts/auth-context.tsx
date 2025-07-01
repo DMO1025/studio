@@ -36,8 +36,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, pass: string): Promise<boolean> => {
     setIsLoading(true);
-    // Mock login logic
-    if (email && pass) {
+    // Mock login logic - for demonstration purposes
+    if (email === 'usuario@photoflow.com' && pass === 'senha123') {
         try {
             localStorage.setItem('isAuthenticated', 'true');
         } catch (error) {

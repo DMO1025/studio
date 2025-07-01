@@ -49,7 +49,7 @@ export default function LoginPage() {
             <Input
               id="email"
               type="email"
-              placeholder="m@exemplo.com"
+              placeholder="usuario@photoflow.com"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
