@@ -13,7 +13,6 @@ import type { Project, User } from '@/types';
 
 interface AdminUserSummary {
   email: string;
-  projectCount: number;
   totalRevenue: number;
 }
 
@@ -44,14 +43,12 @@ export default function AdminPage() {
 
         return {
           email: user.email,
-          projectCount: projects.length,
           totalRevenue: totalRevenue,
         };
       } catch (e) {
         console.error(`Failed to process projects for user ${user.email}`, e);
         return {
           email: user.email,
-          projectCount: 0,
           totalRevenue: 0,
         }
       }
@@ -70,7 +67,7 @@ export default function AdminPage() {
   const handleMysqlImport = () => {
     toast({
       title: 'Importação para MySQL Simulada',
-      description: 'Funcionalidade pronta para importar o JSON para o banco de dados. Um arquivo de backup seria necessário.',
+      description: 'Funcionalidade pronta para importar o JSON para o banco de dados.',
     });
   };
 
@@ -78,15 +75,14 @@ export default function AdminPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Gerenciamento de Usuários</CardTitle>
-          <CardDescription>Visualize todos os usuários cadastrados e a receita gerada.</CardDescription>
+          <CardTitle>Visão Geral dos Usuários</CardTitle>
+          <CardDescription>Visualize todos os usuários e a receita gerada.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Email do Usuário</TableHead>
-                <TableHead className="text-center">Projetos</TableHead>
                 <TableHead className="text-right">Receita Total</TableHead>
               </TableRow>
             </TableHeader>
@@ -94,7 +90,6 @@ export default function AdminPage() {
               {userSummaries.map(user => (
                 <TableRow key={user.email}>
                   <TableCell className="font-medium">{user.email}</TableCell>
-                  <TableCell className="text-center">{user.projectCount}</TableCell>
                   <TableCell className="text-right">R$ {user.totalRevenue.toLocaleString('pt-BR')}</TableCell>
                 </TableRow>
               ))}
@@ -103,62 +98,57 @@ export default function AdminPage() {
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Configuração do Banco de Dados (MySQL)</CardTitle>
-            <CardDescription>
-              Insira os dados de conexão para o banco de dados principal.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleTestConnection} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="db-host">Host</Label>
-                <Input id="db-host" value={dbConfig.host} onChange={(e) => setDbConfig({...dbConfig, host: e.target.value})} placeholder="localhost" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="db-port">Porta</Label>
-                <Input id="db-port" value={dbConfig.port} onChange={(e) => setDbConfig({...dbConfig, port: e.target.value})} placeholder="3306" />
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="db-user">Usuário</Label>
-                <Input id="db-user" value={dbConfig.user} onChange={(e) => setDbConfig({...dbConfig, user: e.target.value})} placeholder="root" />
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="db-password">Senha</Label>
-                <Input id="db-password" type="password" value={dbConfig.password} onChange={(e) => setDbConfig({...dbConfig, password: e.target.value})} />
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="db-name">Banco de Dados</Label>
-                <Input id="db-name" value={dbConfig.database} onChange={(e) => setDbConfig({...dbConfig, database: e.target.value})} placeholder="photoflow_db" />
-              </div>
-              <Button type="submit" variant="outline" className="w-full">
-                <TestTube2 className="mr-2 h-4 w-4" />
-                Testar Conexão
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Migração de Dados para MySQL</CardTitle>
-            <CardDescription>
-              Use um arquivo de backup JSON para popular o banco de dados MySQL configurado.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-             <div className="p-4 border rounded-lg space-y-2">
-                <p className="text-sm text-muted-foreground">Esta ação irá importar os dados de um arquivo JSON de backup para o banco de dados MySQL.</p>
-                <Button onClick={handleMysqlImport} variant="secondary">
-                  <DatabaseZap className="mr-2 h-4 w-4" />
-                  Importar JSON para MySQL
-                </Button>
-             </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Configuração do Banco de Dados (MySQL)</CardTitle>
+          <CardDescription>
+            Insira os dados de conexão para o banco de dados.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleTestConnection} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="db-host">Host</Label>
+              <Input id="db-host" value={dbConfig.host} onChange={(e) => setDbConfig({...dbConfig, host: e.target.value})} placeholder="localhost" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="db-port">Porta</Label>
+              <Input id="db-port" value={dbConfig.port} onChange={(e) => setDbConfig({...dbConfig, port: e.target.value})} placeholder="3306" />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="db-user">Usuário</Label>
+              <Input id="db-user" value={dbConfig.user} onChange={(e) => setDbConfig({...dbConfig, user: e.target.value})} placeholder="root" />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="db-password">Senha</Label>
+              <Input id="db-password" type="password" value={dbConfig.password} onChange={(e) => setDbConfig({...dbConfig, password: e.target.value})} />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="db-name">Banco de Dados</Label>
+              <Input id="db-name" value={dbConfig.database} onChange={(e) => setDbConfig({...dbConfig, database: e.target.value})} placeholder="photoflow_db" />
+            </div>
+            <Button type="submit" variant="outline" className="w-full">
+              <TestTube2 className="mr-2 h-4 w-4" />
+              Testar Conexão
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Migração de Dados</CardTitle>
+          <CardDescription>
+            Importe os dados de um backup JSON para o banco de dados.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Button onClick={handleMysqlImport} variant="secondary">
+              <DatabaseZap className="mr-2 h-4 w-4" />
+              Importar JSON para MySQL
+            </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
