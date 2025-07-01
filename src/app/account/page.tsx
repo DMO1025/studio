@@ -8,11 +8,12 @@ import * as z from 'zod';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -21,6 +22,13 @@ const profileFormSchema = z.object({
   company: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email(),
+  portfolioSlug: z.string()
+    .optional()
+    .refine(
+      (slug) => !slug || /^[a-z0-9-]+$/.test(slug), {
+        message: 'Use apenas letras minúsculas, números e hífens.'
+      }
+    ),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -38,7 +46,7 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 
 export default function AccountPage() {
-  const { user, updateProfile, changePassword, isLoading: isAuthLoading } = useAuth();
+  const { user, updateProfile, changePassword, isLoading: isAuthLoading, getUsers } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -51,6 +59,7 @@ export default function AccountPage() {
       company: '',
       phone: '',
       email: '',
+      portfolioSlug: '',
     },
   });
 
@@ -70,12 +79,29 @@ export default function AccountPage() {
         company: user.company || '',
         phone: user.phone || '',
         email: user.email || '',
+        portfolioSlug: user.portfolioSlug || '',
       });
     }
   }, [user, profileForm]);
 
   async function onProfileSubmit(data: ProfileFormValues) {
     setIsSubmitting(true);
+
+    if (data.portfolioSlug) {
+        const allUsers = getUsers();
+        const otherUserHasSlug = allUsers.some(
+            u => u.email !== user?.email && u.portfolioSlug === data.portfolioSlug
+        );
+        if (otherUserHasSlug) {
+            profileForm.setError('portfolioSlug', {
+                type: 'manual',
+                message: 'Este link já está em uso. Por favor, escolha outro.',
+            });
+            setIsSubmitting(false);
+            return;
+        }
+    }
+    
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { email, ...profileData } = data;
@@ -187,6 +213,33 @@ export default function AccountPage() {
                     <FormControl>
                       <Input placeholder="Seu e-mail" {...field} readOnly disabled />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={profileForm.control}
+                name="portfolioSlug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Link do Portfólio Público</FormLabel>
+                    <div className="flex items-center">
+                      <span className="p-2 rounded-l-md bg-muted text-muted-foreground text-sm">/p/</span>
+                      <FormControl>
+                        <Input placeholder="seu-nome-unico" {...field} value={field.value || ''} className="rounded-l-none" />
+                      </FormControl>
+                    </div>
+                    <FormDescription>
+                      Este será o link público para seu portfólio. Use apenas letras minúsculas, números e hífens.
+                       {field.value && (
+                        <span className="block mt-1">
+                          Seu link:{" "}
+                          <Link href={`/p/${field.value}`} target="_blank" className="underline font-medium text-primary">
+                            /p/{field.value}
+                          </Link>
+                        </span>
+                      )}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { AppLayout } from './app-layout';
 import { Loader2 } from 'lucide-react';
 
-const PUBLIC_ROUTES = ['/login', '/register'];
+const AUTH_ROUTES = ['/login', '/register'];
 
 export function AppInitializer({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -16,17 +16,23 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (isLoading) return;
 
-        const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+        const isAuthRoute = AUTH_ROUTES.includes(pathname);
+        const isPublicPortfolio = pathname.startsWith('/p/');
+        const isProtectedRoute = !isAuthRoute && !isPublicPortfolio;
 
-        if (!isAuthenticated && !isPublicRoute) {
+        if (isProtectedRoute && !isAuthenticated) {
             router.push('/login');
-        } else if (isAuthenticated && isPublicRoute) {
+        } else if (isAuthRoute && isAuthenticated) {
             router.push('/');
         }
     }, [isLoading, isAuthenticated, pathname, router]);
     
-    if (PUBLIC_ROUTES.includes(pathname)) {
+    if (AUTH_ROUTES.includes(pathname)) {
         return <main className="flex min-h-screen w-full items-center justify-center bg-background p-4">{children}</main>;
+    }
+    
+    if (pathname.startsWith('/p/')) {
+        return <>{children}</>;
     }
 
     if (isLoading || !isAuthenticated) {

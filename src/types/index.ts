@@ -25,4 +25,5 @@ export interface User {
   company?: string;
   phone?: string;
   profileComplete?: boolean;
+  portfolioSlug?: string;
 }
