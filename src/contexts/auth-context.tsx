@@ -39,11 +39,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const getUsers = (): User[] => {
+    const defaultUser = { email: 'usuario@photoflow.com', password: 'senha123', profileComplete: true, portfolioSlug: 'admin-portfolio' };
     try {
         const users = localStorage.getItem('photoflow_users');
-        return users ? JSON.parse(users) : [{ email: 'usuario@photoflow.com', password: 'senha123', profileComplete: true }];
+        if (users) {
+            const parsedUsers = JSON.parse(users);
+            // Ensure all users have a portfolioSlug property for consistency
+            return parsedUsers.map((u: User) => ({ ...u, portfolioSlug: u.portfolioSlug || '' }));
+        }
+        return [defaultUser];
     } catch {
-        return [{ email: 'usuario@photoflow.com', password: 'senha123', profileComplete: true }];
+        return [defaultUser];
     }
   };
 
@@ -83,7 +89,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, message: 'Este e-mail já está em uso.' };
     }
     
-    const newUser: User = { email, password: pass, profileComplete: false, name: '', phone: '', company: '' };
+    const newUser: User = { 
+        email, 
+        password: pass, 
+        profileComplete: false, 
+        name: '', 
+        phone: '', 
+        company: '',
+        portfolioSlug: '' 
+    };
     saveUsers([...users, newUser]);
 
     return { success: true, message: 'Cadastro realizado com sucesso!' };
@@ -109,7 +123,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userIndex = allUsers.findIndex(u => u.email === user.email);
         if (userIndex !== -1) {
             const fullUserRecord = allUsers[userIndex];
-            // Make sure to retain password when updating
             const password = fullUserRecord.password;
             allUsers[userIndex] = { ...fullUserRecord, ...profileData, password, profileComplete: true };
             saveUsers(allUsers);
