@@ -57,7 +57,7 @@ const CREATE_TABLE_SQL = [
     instagram TEXT,
     twitter TEXT,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  );`,
+  ) ENGINE=InnoDB;`,
   `CREATE TABLE IF NOT EXISTS projects (
     id VARCHAR(255) PRIMARY KEY,
     clientName VARCHAR(255) NOT NULL,
@@ -74,14 +74,14 @@ const CREATE_TABLE_SQL = [
     user_email VARCHAR(255) NOT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_email) REFERENCES users(email) ON DELETE CASCADE
-  );`,
+  ) ENGINE=InnoDB;`,
   `CREATE TABLE IF NOT EXISTS gallery_images (
     id INT AUTO_INCREMENT PRIMARY KEY,
     project_id VARCHAR(255) NOT NULL,
     imageUrl TEXT NOT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-  );`
+  ) ENGINE=InnoDB;`
 ];
 
 
