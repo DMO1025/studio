@@ -9,7 +9,7 @@ import { getProjects as getProjectsAction, addProject as addProjectAction, updat
 interface ProjectContextType {
   projects: Project[];
   isLoading: boolean;
-  addProject: (project: Omit<Project, 'id' | 'galleryImages'>) => Promise<void>;
+  addProject: (project: Omit<Project, 'id' | 'user_email' | 'galleryImages'>) => Promise<void>;
   updateProjectStatus: (projectId: string, status: ProjectStatus) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   updateProject: (project: Project) => Promise<void>;
@@ -47,7 +47,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     fetchProjects();
   }, [fetchProjects]);
 
-  const addProject = async (project: Omit<Project, 'id' | 'galleryImages'>) => {
+  const addProject = async (project: Omit<Project, 'id' | 'user_email' | 'galleryImages'>) => {
     await addProjectAction(project);
     await fetchProjects();
   };
@@ -84,9 +84,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     await fetchProjects();
   }
 
+  // Combine auth loading and project loading states
+  const isAppLoading = isAuthLoading || (isAuthenticated && isLoading);
+
   return (
     <ProjectContext.Provider value={{ projects, isLoading, addProject, updateProjectStatus, deleteProject, updateProject, addGalleryImage, getProjectById, importProjects }}>
-      {!isLoading && !isAuthLoading ? children : null}
+      {!isAppLoading ? children : null}
     </ProjectContext.Provider>
   );
 }

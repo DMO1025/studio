@@ -21,7 +21,7 @@ export async function getProjects(): Promise<Project[]> {
 
 export async function addProject(projectData: Omit<Project, 'id' | 'user_email' | 'galleryImages'>): Promise<Project> {
     const email = await getAuthenticatedUserEmail();
-    const newProject = db.addProjectForUser(email, projectData);
+    const newProject = await db.addProjectForUser(email, projectData);
     revalidatePath('/');
     revalidatePath('/workflow');
     revalidatePath('/calendar');
@@ -31,7 +31,7 @@ export async function addProject(projectData: Omit<Project, 'id' | 'user_email' 
 
 export async function updateProject(project: Project): Promise<Project | undefined> {
     const email = await getAuthenticatedUserEmail();
-    const updatedProject = db.updateProjectForUser(email, project);
+    const updatedProject = await db.updateProjectForUser(email, project);
     revalidatePath('/');
     revalidatePath('/workflow');
     revalidatePath('/calendar');
@@ -41,7 +41,7 @@ export async function updateProject(project: Project): Promise<Project | undefin
 
 export async function deleteProject(projectId: string): Promise<boolean> {
     const email = await getAuthenticatedUserEmail();
-    const result = db.deleteProjectForUser(email, projectId);
+    const result = await db.deleteProjectForUser(email, projectId);
     revalidatePath('/');
     revalidatePath('/workflow');
     revalidatePath('/calendar');
@@ -51,26 +51,26 @@ export async function deleteProject(projectId: string): Promise<boolean> {
 
 export async function addGalleryImage(projectId: string, imageUrl: string): Promise<Project | undefined> {
     const email = await getAuthenticatedUserEmail();
-    const project = db.addGalleryImageToProject(email, projectId, imageUrl);
+    const project = await db.addGalleryImageToProject(email, projectId, imageUrl);
     revalidatePath(`/gallery/${projectId}`);
     return project;
 }
 
 export async function importProjects(newProjects: Project[]): Promise<void> {
     const email = await getAuthenticatedUserEmail();
-    db.importProjectsForUser(email, newProjects);
+    await db.importProjectsForUser(email, newProjects);
     revalidatePath('/');
 }
 
 // --- Public Actions ---
 
 export async function getPublicPortfolio(slug: string): Promise<{ user: User, projects: Project[] } | null> {
-    const user = db.findUserBySlug(slug);
+    const user = await db.findUserBySlug(slug);
     if (!user?.email) {
         return null;
     }
 
-    const allProjects = db.getProjectsForUser(user.email);
+    const allProjects = await db.getProjectsForUser(user.email);
     const completedProjects = allProjects.filter(p => p.status === 'Concluído');
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

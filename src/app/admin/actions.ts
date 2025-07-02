@@ -2,7 +2,8 @@
 'use server';
 
 import mysql from 'mysql2/promise';
-import { db, FullBackupData } from '@/lib/data';
+import { db } from '@/lib/data';
+import type { FullBackupData, User, Project } from '@/types';
 
 interface DbConfig {
   host?: string;
@@ -102,7 +103,7 @@ export async function createDatabaseTables(config: DbConfig) {
 }
 
 export async function exportAllDataAsJson(): Promise<string> {
-    const data = db.getFullBackup();
+    const data = await db.getFullBackup();
     return JSON.stringify(data, null, 2);
 }
 
@@ -114,15 +115,17 @@ export async function importJsonToMysql(config: DbConfig, jsonData: string) {
         connection = await mysql.createConnection(config);
         await connection.beginTransaction();
 
+        // Clear existing data to ensure a clean import
+        await connection.execute('DELETE FROM gallery_images');
+        await connection.execute('DELETE FROM projects');
+        await connection.execute('DELETE FROM users');
+        
         // Import users
         for (const user of data.users) {
             if (!user.password || !user.email) continue;
             await connection.execute(
                 `INSERT INTO users (email, password, name, company, phone, profileComplete, portfolioSlug, profilePictureUrl, bio, website, instagram, twitter) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
-                 ON DUPLICATE KEY UPDATE 
-                    password=VALUES(password), name=VALUES(name), company=VALUES(company), phone=VALUES(phone), profileComplete=VALUES(profileComplete), portfolioSlug=VALUES(portfolioSlug), profilePictureUrl=VALUES(profilePictureUrl), bio=VALUES(bio), website=VALUES(website), instagram=VALUES(instagram), twitter=VALUES(twitter)
-                `,
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     user.email, user.password, user.name || null, user.company || null, user.phone || null, user.profileComplete || false,
                     user.portfolioSlug || null, user.profilePictureUrl || null, user.bio || null, user.website || null,
@@ -138,10 +141,7 @@ export async function importJsonToMysql(config: DbConfig, jsonData: string) {
             
             await connection.execute(
                 `INSERT INTO projects (id, clientName, date, location, photographer, status, stage, income, expenses, paymentStatus, description, imageUrl, user_email) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE
-                    clientName=VALUES(clientName), date=VALUES(date), location=VALUES(location), photographer=VALUES(photographer), status=VALUES(status), stage=VALUES(stage), income=VALUES(income), expenses=VALUES(expenses), paymentStatus=VALUES(paymentStatus), description=VALUES(description), imageUrl=VALUES(imageUrl)
-                `,
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     project.id, project.clientName, new Date(project.date), project.location, project.photographer,
                     project.status, project.stage, project.income, project.expenses, project.paymentStatus,
@@ -150,7 +150,6 @@ export async function importJsonToMysql(config: DbConfig, jsonData: string) {
             );
 
             if (project.galleryImages && project.galleryImages.length > 0) {
-                await connection.execute('DELETE FROM gallery_images WHERE project_id = ?', [project.id]);
                 for (const imageUrl of project.galleryImages) {
                     await connection.execute(
                         'INSERT INTO gallery_images (project_id, imageUrl) VALUES (?, ?)',

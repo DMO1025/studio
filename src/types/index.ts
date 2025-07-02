@@ -1,3 +1,4 @@
+
 export type ProjectStatus = 'Pendente' | 'Em Andamento' | 'Concluído';
 export type ProjectStage = 'Sessão Fotográfica' | 'Edição' | 'Entrega';
 export type PaymentStatus = 'Pago' | 'Não Pago' | 'Parcialmente Pago';
@@ -16,6 +17,7 @@ export interface Project {
   description: string;
   imageUrl?: string;
   galleryImages?: string[];
+  user_email: string; // Foreign key to user
 }
 
 export interface User {
@@ -31,4 +33,9 @@ export interface User {
   website?: string;
   instagram?: string;
   twitter?: string;
+}
+
+export interface FullBackupData {
+  users: User[];
+  projects: Record<string, Project[]>; // Keyed by user email
 }
