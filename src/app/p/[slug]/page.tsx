@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { Project, User } from '@/types';
 import Image from 'next/image';
-import { Camera, ShieldOff, ArrowLeft } from 'lucide-react';
+import { Camera, ShieldOff, ArrowLeft, Globe, Instagram, Twitter } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -24,7 +24,6 @@ export default function PublicPortfolioPage() {
   React.useEffect(() => {
     if (!slug) return;
 
-    // This component only runs on the client, so window is available.
     if (typeof window === 'undefined') {
         return;
     }
@@ -89,11 +88,29 @@ export default function PublicPortfolioPage() {
     <div className="min-h-screen bg-secondary/30 text-foreground">
         <header className="p-8 flex flex-col items-center justify-center text-center border-b bg-background">
              <Avatar className="h-24 w-24 mb-4 border-4 border-primary">
-                <AvatarImage src={`https://i.pravatar.cc/150?u=${user.email}`} />
+                <AvatarImage src={user.profilePictureUrl} alt={user.name} />
                 <AvatarFallback>{user.name ? user.name.split(' ').map(s => s[0]).join('') : user.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
             <h1 className="text-4xl font-bold tracking-tight">{user.name || 'Fotógrafo Profissional'}</h1>
-            {user.company && <p className="text-lg text-muted-foreground mt-2">{user.company}</p>}
+            {user.company && <p className="text-lg text-muted-foreground mt-1">{user.company}</p>}
+            {user.bio && <p className="text-base text-muted-foreground mt-4 max-w-2xl">{user.bio}</p>}
+            <div className="flex items-center gap-4 mt-4">
+              {user.website && (
+                <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Globe className="h-6 w-6" />
+                </a>
+              )}
+              {user.instagram && (
+                <a href={user.instagram} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Instagram className="h-6 w-6" />
+                </a>
+              )}
+              {user.twitter && (
+                <a href={user.twitter} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Twitter className="h-6 w-6" />
+                </a>
+              )}
+            </div>
         </header>
         <main className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
             <h2 className="text-2xl font-semibold mb-6">Projetos Concluídos</h2>

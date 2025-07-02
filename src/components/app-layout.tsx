@@ -66,8 +66,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <Button variant="ghost" className="justify-start w-full p-2 h-auto">
                     <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src={`https://i.pravatar.cc/40?u=${user?.email}`} />
-                            <AvatarFallback>{user?.email?.[0].toUpperCase()}</AvatarFallback>
+                            <AvatarImage src={user?.profilePictureUrl} />
+                            <AvatarFallback>{user?.name ? user.name.split(' ').map(s => s[0]).join('') : user?.email?.[0].toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className='text-left'>
                             <p className="text-sm font-medium truncate max-w-[120px]">{user?.name || user?.email}</p>

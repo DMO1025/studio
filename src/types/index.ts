@@ -26,4 +26,9 @@ export interface User {
   phone?: string;
   profileComplete?: boolean;
   portfolioSlug?: string;
+  profilePictureUrl?: string;
+  bio?: string;
+  website?: string;
+  instagram?: string;
+  twitter?: string;
 }

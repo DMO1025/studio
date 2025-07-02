@@ -39,13 +39,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const getUsers = (): User[] => {
-    const defaultUser = { email: 'usuario@photoflow.com', password: 'senha123', profileComplete: true, portfolioSlug: 'admin-portfolio' };
+    const defaultUser: User = { 
+      email: 'usuario@photoflow.com', 
+      password: 'senha123', 
+      profileComplete: true, 
+      portfolioSlug: 'admin-portfolio',
+      profilePictureUrl: '',
+      bio: '',
+      website: '',
+      instagram: '',
+      twitter: '',
+    };
     try {
         const users = localStorage.getItem('photoflow_users');
         if (users) {
-            const parsedUsers = JSON.parse(users);
-            // Ensure all users have a portfolioSlug property for consistency
-            return parsedUsers.map((u: User) => ({ ...u, portfolioSlug: u.portfolioSlug || '' }));
+            const parsedUsers: User[] = JSON.parse(users);
+            return parsedUsers.map((u: User) => ({ 
+              ...u, 
+              portfolioSlug: u.portfolioSlug || '',
+              profilePictureUrl: u.profilePictureUrl || '',
+              bio: u.bio || '',
+              website: u.website || '',
+              instagram: u.instagram || '',
+              twitter: u.twitter || '',
+            }));
         }
         return [defaultUser];
     } catch {
@@ -96,7 +113,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         name: '', 
         phone: '', 
         company: '',
-        portfolioSlug: '' 
+        portfolioSlug: '',
+        profilePictureUrl: '',
+        bio: '',
+        website: '',
+        instagram: '',
+        twitter: '',
     };
     saveUsers([...users, newUser]);
 
