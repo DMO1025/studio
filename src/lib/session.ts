@@ -1,4 +1,3 @@
-
 'use server';
 import 'server-only';
 import { SignJWT, jwtVerify } from 'jose';
@@ -30,7 +29,8 @@ export async function decrypt(session: string | undefined = '') {
 
 export async function createSession(user: Omit<User, 'password'>) {
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
-    const session = await encrypt({ user, expires });
+    // Only encrypt the user data. The expiration is handled by setExpirationTime.
+    const session = await encrypt({ user });
 
     cookies().set('session', session, {
         expires,

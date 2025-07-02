@@ -1,0 +1,19 @@
+{
+  "users": [
+    {
+      "email": "usuario@photoflow.com",
+      "password": "senha123",
+      "name": "Admin User",
+      "profileComplete": true,
+      "portfolioSlug": "admin-portfolio",
+      "profilePictureUrl": "",
+      "bio": "Sou o administrador do sistema.",
+      "website": "",
+      "instagram": "",
+      "twitter": ""
+    }
+  ],
+  "projects": {
+    "usuario@photoflow.com": []
+  }
+}
