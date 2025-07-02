@@ -1,5 +1,4 @@
 
-'use server';
 import 'server-only';
 
 import mysql from 'mysql2/promise';
@@ -25,10 +24,6 @@ function getPool() {
     pool = mysql.createPool(dbConfig);
     return pool;
 }
-
-// The getDbPool function was removed as it was causing a build error.
-// It was a non-async export in a 'use server' file, and was also unused.
-// The internal `getPool()` is still used by the `db` methods below.
 
 export const db = {
   // User Management
