@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -21,6 +22,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import type { PaymentStatus, ProjectStage, ProjectStatus } from '@/types';
+import { useAuth } from '@/contexts/auth-context';
 
 const projectStatuses: ProjectStatus[] = ['Pendente', 'Em Andamento', 'Concluído'];
 const projectStages: ProjectStage[] = ['Sessão Fotográfica', 'Edição', 'Entrega'];
@@ -46,6 +48,7 @@ type CreateProjectDialogProps = {
 
 export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogProps) {
   const { addProject } = useProjects();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isExtracting, setIsExtracting] = React.useState(false);
 
@@ -63,6 +66,13 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
       paymentStatus: 'Não Pago',
     },
   });
+
+  React.useEffect(() => {
+    if (user?.name) {
+      form.setValue('photographer', user.name);
+    }
+  }, [user, form]);
+
 
   const handleExtract = async () => {
     const description = form.getValues('description');
@@ -87,8 +97,8 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     setIsExtracting(false);
   };
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    addProject({ ...values, date: values.date.toISOString() });
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    await addProject({ ...values, date: values.date.toISOString() });
     toast({ title: 'Projeto Criado', description: `O projeto para ${values.clientName} foi adicionado.` });
     form.reset();
     onOpenChange(false);

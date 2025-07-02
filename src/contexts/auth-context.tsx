@@ -1,18 +1,20 @@
 
 'use client';
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import type { User } from '@/types';
+import { getCurrentUser, login as loginAction, logout as logoutAction, register as registerAction, updateProfile as updateProfileAction, changePassword as changePasswordAction, getAllUsers as getAllUsersAction } from '@/app/auth/actions';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   isLoading: boolean;
-  login: (email: string, pass: string) => Promise<boolean>;
+  login: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
   register: (email: string, pass: string) => Promise<{ success: boolean; message: string }>;
-  logout: () => void;
-  getUsers: () => User[];
-  updateProfile: (profileData: Partial<User>) => void;
+  logout: () => Promise<void>;
+  getAllUsers: () => Promise<User[]>;
+  updateProfile: (profileData: Partial<User>) => Promise<{ success: boolean; message?: string }>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
 }
 
@@ -21,165 +23,63 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
-  useEffect(() => {
-    const checkAuthStatus = () => {
-        try {
-            const storedUser = localStorage.getItem('photoflow_user');
-            if (storedUser) {
-                setUser(JSON.parse(storedUser));
-            }
-        } catch (error) {
-            console.error('Could not access local storage:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    checkAuthStatus();
+  const checkAuthStatus = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+    } catch (error) {
+        setUser(null);
+    } finally {
+        setIsLoading(false);
+    }
   }, []);
 
-  const getUsers = (): User[] => {
-    const defaultUser: User = { 
-      email: 'usuario@photoflow.com', 
-      password: 'senha123', 
-      profileComplete: true, 
-      portfolioSlug: 'admin-portfolio',
-      profilePictureUrl: '',
-      bio: '',
-      website: '',
-      instagram: '',
-      twitter: '',
-    };
-    try {
-        const users = localStorage.getItem('photoflow_users');
-        if (users) {
-            const parsedUsers: User[] = JSON.parse(users);
-            return parsedUsers.map((u: User) => ({ 
-              ...u, 
-              portfolioSlug: u.portfolioSlug || '',
-              profilePictureUrl: u.profilePictureUrl || '',
-              bio: u.bio || '',
-              website: u.website || '',
-              instagram: u.instagram || '',
-              twitter: u.twitter || '',
-            }));
-        }
-        return [defaultUser];
-    } catch {
-        return [defaultUser];
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
+
+  const login = async (email: string, pass: string) => {
+    const result = await loginAction(email, pass);
+    if (result.success) {
+      await checkAuthStatus(); 
     }
+    return result;
   };
 
-  const saveUsers = (users: User[]) => {
-    try {
-        localStorage.setItem('photoflow_users', JSON.stringify(users));
-    } catch (error) {
-        console.error('Could not save users to local storage:', error);
-    }
+  const register = async (email: string, pass: string) => {
+    const result = await registerAction(email, pass);
+    return result;
   };
 
-  const login = async (email: string, pass: string): Promise<boolean> => {
-    setIsLoading(true);
-    const users = getUsers();
-    const foundUser = users.find(u => u.email === email && u.password === pass);
-    
-    if (foundUser) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, ...userToStore } = foundUser;
-        try {
-            localStorage.setItem('photoflow_user', JSON.stringify(userToStore));
-        } catch (error) {
-            console.error('Could not access local storage:', error);
-        }
-        setUser(userToStore);
-        setIsLoading(false);
-        return true;
-    }
-    
-    setIsLoading(false);
-    return false;
-  };
-
-  const register = async (email: string, pass: string): Promise<{ success: boolean; message: string }> => {
-    const users = getUsers();
-    if (users.some(u => u.email === email)) {
-      return { success: false, message: 'Este e-mail já está em uso.' };
-    }
-    
-    const newUser: User = { 
-        email, 
-        password: pass, 
-        profileComplete: false, 
-        name: '', 
-        phone: '', 
-        company: '',
-        portfolioSlug: '',
-        profilePictureUrl: '',
-        bio: '',
-        website: '',
-        instagram: '',
-        twitter: '',
-    };
-    saveUsers([...users, newUser]);
-
-    return { success: true, message: 'Cadastro realizado com sucesso!' };
-  };
-
-  const logout = () => {
-    try {
-        localStorage.removeItem('photoflow_user');
-    } catch (error) {
-        console.error('Could not access local storage:', error);
-    }
+  const logout = async () => {
+    await logoutAction();
     setUser(null);
+    router.push('/login');
   };
   
-  const updateProfile = (profileData: Partial<User>) => {
-    if (!user) return;
-
-    const updatedUser = { ...user, ...profileData, profileComplete: true };
-    setUser(updatedUser);
-    try {
-        localStorage.setItem('photoflow_user', JSON.stringify(updatedUser));
-        const allUsers = getUsers();
-        const userIndex = allUsers.findIndex(u => u.email === user.email);
-        if (userIndex !== -1) {
-            const fullUserRecord = allUsers[userIndex];
-            const password = fullUserRecord.password;
-            allUsers[userIndex] = { ...fullUserRecord, ...profileData, password, profileComplete: true };
-            saveUsers(allUsers);
-        }
-    } catch (error) {
-        console.error('Could not update profile in local storage:', error);
+  const updateProfile = async (profileData: Partial<User>) => {
+    const result = await updateProfileAction(profileData);
+    if (result.success) {
+        await checkAuthStatus();
     }
+    return result;
   };
 
-  const changePassword = async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
-    if (!user) return { success: false, message: 'Usuário não autenticado.' };
-
-    const users = getUsers();
-    const userIndex = users.findIndex(u => u.email === user.email);
-    
-    if (userIndex === -1) {
-        return { success: false, message: 'Usuário não encontrado.' };
-    }
-    
-    const storedUser = users[userIndex];
-    if (storedUser.password !== currentPassword) {
-        return { success: false, message: 'A senha atual está incorreta.' };
-    }
-    
-    users[userIndex].password = newPassword;
-    saveUsers(users);
-    
-    return { success: true, message: 'Senha alterada com sucesso!' };
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    return await changePasswordAction(currentPassword, newPassword);
   };
-
+  
+  const getAllUsers = async (): Promise<User[]> => {
+      return await getAllUsersAction();
+  }
 
   const isAuthenticated = !isLoading && !!user;
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, register, logout, getUsers, updateProfile, changePassword }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, register, logout, getAllUsers, updateProfile, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

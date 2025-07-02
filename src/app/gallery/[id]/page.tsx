@@ -9,21 +9,27 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { ArrowLeft, UploadCloud, CheckCircle, Send } from 'lucide-react';
+import { ArrowLeft, UploadCloud, CheckCircle, Send, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import type { Project } from '@/types';
 
 export default function ProjectGalleryPage() {
     const params = useParams();
     const projectId = params.id as string;
-    const { getProjectById, addGalleryImage } = useProjects();
+    const { getProjectById, addGalleryImage, isLoading } = useProjects();
     const { toast } = useToast();
     
-    const project = getProjectById(projectId);
-    
+    const [project, setProject] = React.useState<Project | undefined>(undefined);
     const [selectedImages, setSelectedImages] = React.useState<string[]>([]);
     
+    React.useEffect(() => {
+        if (projectId) {
+            setProject(getProjectById(projectId));
+        }
+    }, [projectId, getProjectById, isLoading]);
+
     const processAndAddImage = React.useCallback(async (file: File, watermark: string) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -76,7 +82,7 @@ export default function ProjectGalleryPage() {
     }, [addGalleryImage, projectId, toast]);
 
     const onDrop = React.useCallback((acceptedFiles: File[]) => {
-        if (!project) return;
+        if (!project || !project.photographer) return;
         acceptedFiles.forEach(file => {
             processAndAddImage(file, project.photographer);
         });
@@ -110,6 +116,14 @@ export default function ProjectGalleryPage() {
         
         window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-[50vh] w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     if (!project) {
         return (

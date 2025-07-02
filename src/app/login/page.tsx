@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -22,14 +23,14 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const success = await login(email, password);
-    if (success) {
+    const result = await login(email, password);
+    if (result.success) {
       router.push('/');
     } else {
       toast({
         variant: 'destructive',
         title: 'Falha no Login',
-        description: 'Por favor, verifique seu e-mail e senha.',
+        description: result.message || 'Por favor, verifique seu e-mail e senha.',
       });
       setIsLoading(false);
     }

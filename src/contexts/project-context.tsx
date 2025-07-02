@@ -1,113 +1,92 @@
+
 'use client';
 
 import * as React from 'react';
 import type { Project, ProjectStatus } from '@/types';
-import { MOCK_PROJECTS } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
+import { getProjects as getProjectsAction, addProject as addProjectAction, updateProject as updateProjectAction, deleteProject as deleteProjectAction, addGalleryImage as addGalleryImageAction, importProjects as importProjectsAction } from '@/app/projects/actions';
 
 interface ProjectContextType {
   projects: Project[];
-  addProject: (project: Omit<Project, 'id'>) => void;
-  updateProjectStatus: (projectId: string, status: ProjectStatus) => void;
-  deleteProject: (projectId: string) => void;
-  updateProject: (project: Project) => void;
-  addGalleryImage: (projectId: string, imageUrl: string) => void;
+  isLoading: boolean;
+  addProject: (project: Omit<Project, 'id' | 'galleryImages'>) => Promise<void>;
+  updateProjectStatus: (projectId: string, status: ProjectStatus) => Promise<void>;
+  deleteProject: (projectId: string) => Promise<void>;
+  updateProject: (project: Project) => Promise<void>;
+  addGalleryImage: (projectId: string, imageUrl: string) => Promise<void>;
   getProjectById: (projectId: string) => Project | undefined;
-  importProjects: (newProjects: Project[]) => void;
+  importProjects: (newProjects: Project[]) => Promise<void>;
 }
 
 const ProjectContext = React.createContext<ProjectContextType | undefined>(undefined);
 
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  const getStorageKey = React.useCallback(() => {
-    return user ? `photo-flow-projects-${user.email}` : null;
-  }, [user]);
-
-  React.useEffect(() => {
+  const fetchProjects = React.useCallback(async () => {
     if (isAuthenticated && user) {
-        const storageKey = getStorageKey();
-        if (!storageKey) {
-            setIsLoading(false);
-            return;
-        };
-
-        try {
-            const item = window.localStorage.getItem(storageKey);
-            setProjects(item ? JSON.parse(item) : MOCK_PROJECTS);
-        } catch (error) {
-            console.error(error);
-            setProjects(MOCK_PROJECTS);
-        } finally {
-            setIsLoading(false);
-        }
-    } else {
+      setIsLoading(true);
+      try {
+        const userProjects = await getProjectsAction();
+        setProjects(userProjects);
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+        setProjects([]);
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (!isAuthLoading) {
         setProjects([]);
         setIsLoading(false);
     }
-  }, [user, isAuthenticated, getStorageKey]);
+  }, [user, isAuthenticated, isAuthLoading]);
 
   React.useEffect(() => {
-    if (isLoading || !isAuthenticated) return;
-    
-    const storageKey = getStorageKey();
-    if (!storageKey) return;
+    fetchProjects();
+  }, [fetchProjects]);
 
-    try {
-      window.localStorage.setItem(storageKey, JSON.stringify(projects));
-    } catch (error) {
-      console.error(error);
+  const addProject = async (project: Omit<Project, 'id' | 'galleryImages'>) => {
+    await addProjectAction(project);
+    await fetchProjects();
+  };
+  
+  const updateProject = async (updatedProject: Project) => {
+    await updateProjectAction(updatedProject);
+    await fetchProjects();
+  };
+
+  const updateProjectStatus = async (projectId: string, status: ProjectStatus) => {
+    const project = projects.find(p => p.id === projectId);
+    if(project) {
+        await updateProjectAction({ ...project, status });
+        await fetchProjects();
     }
-  }, [projects, isLoading, isAuthenticated, getStorageKey]);
-
-
-  const addProject = (project: Omit<Project, 'id'>) => {
-    const newProject = { ...project, id: new Date().getTime().toString(), galleryImages: [] };
-    setProjects((prev) => [newProject, ...prev]);
   };
 
-  const updateProjectStatus = (projectId: string, status: ProjectStatus) => {
-    setProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, status } : p))
-    );
+  const deleteProject = async (projectId: string) => {
+    await deleteProjectAction(projectId);
+    await fetchProjects();
   };
   
-  const updateProject = (updatedProject: Project) => {
-    setProjects((prev) =>
-      prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
-    );
-  };
-
-  const deleteProject = (projectId: string) => {
-    setProjects((prev) => prev.filter((p) => p.id !== projectId));
-  };
-  
-  const addGalleryImage = (projectId: string, imageUrl: string) => {
-    setProjects((prev) => 
-      prev.map((p) => {
-        if (p.id === projectId) {
-          const updatedImages = [...(p.galleryImages || []), imageUrl];
-          return { ...p, galleryImages: updatedImages };
-        }
-        return p;
-      })
-    )
+  const addGalleryImage = async (projectId: string, imageUrl: string) => {
+    await addGalleryImageAction(projectId, imageUrl);
+    await fetchProjects();
   };
   
   const getProjectById = (projectId: string): Project | undefined => {
     return projects.find(p => p.id === projectId);
   }
 
-  const importProjects = (newProjects: Project[]) => {
-    setProjects(newProjects);
+  const importProjects = async (newProjects: Project[]) => {
+    await importProjectsAction(newProjects);
+    await fetchProjects();
   }
 
   return (
-    <ProjectContext.Provider value={{ projects, addProject, updateProjectStatus, deleteProject, updateProject, addGalleryImage, getProjectById, importProjects }}>
-      {!isLoading ? children : null}
+    <ProjectContext.Provider value={{ projects, isLoading, addProject, updateProjectStatus, deleteProject, updateProject, addGalleryImage, getProjectById, importProjects }}>
+      {!isLoading && !isAuthLoading ? children : null}
     </ProjectContext.Provider>
   );
 }

@@ -53,7 +53,7 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 
 export default function AccountPage() {
-  const { user, updateProfile, changePassword, isLoading: isAuthLoading, getUsers } = useAuth();
+  const { user, updateProfile, changePassword, isLoading: isAuthLoading, getAllUsers } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -105,7 +105,7 @@ export default function AccountPage() {
     setIsSubmitting(true);
 
     if (data.portfolioSlug) {
-        const allUsers = getUsers();
+        const allUsers = await getAllUsers();
         const otherUserHasSlug = allUsers.some(
             u => u.email !== user?.email && u.portfolioSlug === data.portfolioSlug
         );
@@ -119,10 +119,11 @@ export default function AccountPage() {
         }
     }
     
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { email, ...profileData } = data;
-      updateProfile(profileData);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { email, ...profileData } = data;
+    const result = await updateProfile(profileData);
+    
+    if (result.success) {
       toast({
         title: 'Perfil Atualizado!',
         description: 'Suas informações foram salvas com sucesso.',
@@ -130,15 +131,15 @@ export default function AccountPage() {
       if (!user?.profileComplete) {
         router.push('/');
       }
-    } catch (error) {
+    } else {
       toast({
         variant: 'destructive',
         title: 'Erro ao Atualizar',
-        description: 'Não foi possível salvar suas informações. Tente novamente.',
+        description: result.message || 'Não foi possível salvar suas informações. Tente novamente.',
       });
-    } finally {
-      setIsSubmitting(false);
     }
+    
+    setIsSubmitting(false);
   }
 
   async function onPasswordSubmit(data: PasswordFormValues) {

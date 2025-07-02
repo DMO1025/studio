@@ -1,6 +1,8 @@
+
 'use server';
 
 import mysql from 'mysql2/promise';
+import { db, FullBackupData } from '@/lib/data';
 
 interface DbConfig {
   host?: string;
@@ -44,6 +46,16 @@ const CREATE_TABLE_SQL = [
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
+    name VARCHAR(255),
+    company VARCHAR(255),
+    phone VARCHAR(255),
+    profileComplete BOOLEAN DEFAULT FALSE,
+    portfolioSlug VARCHAR(255) UNIQUE,
+    profilePictureUrl TEXT,
+    bio TEXT,
+    website TEXT,
+    instagram TEXT,
+    twitter TEXT,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );`,
   `CREATE TABLE IF NOT EXISTS projects (
@@ -89,53 +101,61 @@ export async function createDatabaseTables(config: DbConfig) {
   }
 }
 
-interface FullBackup {
-  users: { email: string; password?: string }[];
-  projects: Record<string, any[]>;
+export async function exportAllDataAsJson(): Promise<string> {
+    const data = db.getFullBackup();
+    return JSON.stringify(data, null, 2);
 }
 
 export async function importJsonToMysql(config: DbConfig, jsonData: string) {
     let connection;
     try {
-        const data: FullBackup = JSON.parse(jsonData);
+        const data: FullBackupData = JSON.parse(jsonData);
         
         connection = await mysql.createConnection(config);
         await connection.beginTransaction();
 
         // Import users
         for (const user of data.users) {
-            if (!user.password) continue; // Skip users without passwords for security
+            if (!user.password || !user.email) continue;
             await connection.execute(
-                'INSERT INTO users (email, password) VALUES (?, ?) ON DUPLICATE KEY UPDATE password=VALUES(password)',
-                [user.email, user.password]
+                `INSERT INTO users (email, password, name, company, phone, profileComplete, portfolioSlug, profilePictureUrl, bio, website, instagram, twitter) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+                 ON DUPLICATE KEY UPDATE 
+                    password=VALUES(password), name=VALUES(name), company=VALUES(company), phone=VALUES(phone), profileComplete=VALUES(profileComplete), portfolioSlug=VALUES(portfolioSlug), profilePictureUrl=VALUES(profilePictureUrl), bio=VALUES(bio), website=VALUES(website), instagram=VALUES(instagram), twitter=VALUES(twitter)
+                `,
+                [
+                    user.email, user.password, user.name || null, user.company || null, user.phone || null, user.profileComplete || false,
+                    user.portfolioSlug || null, user.profilePictureUrl || null, user.bio || null, user.website || null,
+                    user.instagram || null, user.twitter || null
+                ]
             );
         }
 
         // Import projects and gallery images
-        for (const userEmail in data.projects) {
-            const userProjects = data.projects[userEmail];
-            for (const project of userProjects) {
-                 await connection.execute(
-                    `INSERT INTO projects (id, clientName, date, location, photographer, status, stage, income, expenses, paymentStatus, description, imageUrl, user_email) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                     ON DUPLICATE KEY UPDATE
-                        clientName=VALUES(clientName), date=VALUES(date), location=VALUES(location), photographer=VALUES(photographer), status=VALUES(status), stage=VALUES(stage), income=VALUES(income), expenses=VALUES(expenses), paymentStatus=VALUES(paymentStatus), description=VALUES(description), imageUrl=VALUES(imageUrl), user_email=VALUES(user_email)
-                    `,
-                    [
-                        project.id, project.clientName, new Date(project.date), project.location, project.photographer,
-                        project.status, project.stage, project.income, project.expenses, project.paymentStatus,
-                        project.description, project.imageUrl || null, userEmail
-                    ]
-                );
+        const allProjects = Object.values(data.projects).flat();
+        for (const project of allProjects) {
+            if (!project.user_email) continue;
+            
+            await connection.execute(
+                `INSERT INTO projects (id, clientName, date, location, photographer, status, stage, income, expenses, paymentStatus, description, imageUrl, user_email) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE
+                    clientName=VALUES(clientName), date=VALUES(date), location=VALUES(location), photographer=VALUES(photographer), status=VALUES(status), stage=VALUES(stage), income=VALUES(income), expenses=VALUES(expenses), paymentStatus=VALUES(paymentStatus), description=VALUES(description), imageUrl=VALUES(imageUrl)
+                `,
+                [
+                    project.id, project.clientName, new Date(project.date), project.location, project.photographer,
+                    project.status, project.stage, project.income, project.expenses, project.paymentStatus,
+                    project.description, project.imageUrl || null, project.user_email
+                ]
+            );
 
-                if (project.galleryImages && project.galleryImages.length > 0) {
-                    await connection.execute('DELETE FROM gallery_images WHERE project_id = ?', [project.id]);
-                    for (const imageUrl of project.galleryImages) {
-                        await connection.execute(
-                            'INSERT INTO gallery_images (project_id, imageUrl) VALUES (?, ?)',
-                            [project.id, imageUrl]
-                        );
-                    }
+            if (project.galleryImages && project.galleryImages.length > 0) {
+                await connection.execute('DELETE FROM gallery_images WHERE project_id = ?', [project.id]);
+                for (const imageUrl of project.galleryImages) {
+                    await connection.execute(
+                        'INSERT INTO gallery_images (project_id, imageUrl) VALUES (?, ?)',
+                        [project.id, imageUrl]
+                    );
                 }
             }
         }
@@ -143,7 +163,7 @@ export async function importJsonToMysql(config: DbConfig, jsonData: string) {
         await connection.commit();
         await connection.end();
 
-        const projectCount = Object.values(data.projects).flat().length;
+        const projectCount = allProjects.length;
         return { success: true, message: `Dados importados! ${data.users.length} usuários e ${projectCount} projetos.` };
 
     } catch (error: any) {

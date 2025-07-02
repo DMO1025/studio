@@ -1,70 +1,37 @@
-'use client';
 
 import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import type { Project, User } from '@/types';
 import Image from 'next/image';
 import { Camera, ShieldOff, ArrowLeft, Globe, Instagram, Twitter } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { getPublicPortfolio } from '@/app/projects/actions';
 
 interface PortfolioData {
   user: User;
   projects: Project[];
 }
 
-export default function PublicPortfolioPage() {
-  const params = useParams();
-  const slug = params.slug as string;
-  const [portfolioData, setPortfolioData] = React.useState<PortfolioData | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+interface PublicPortfolioPageProps {
+    params: { slug: string };
+}
 
-  React.useEffect(() => {
-    if (!slug) return;
+export default async function PublicPortfolioPage({ params }: PublicPortfolioPageProps) {
+  const { slug } = params;
+  let portfolioData: PortfolioData | null = null;
+  let error: string | null = null;
 
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    try {
-      const allUsersJson = localStorage.getItem('photoflow_users');
-      if (!allUsersJson) {
-        throw new Error('Nenhum usuário encontrado.');
-      }
-      const allUsers: User[] = JSON.parse(allUsersJson);
-      
-      const portfolioUser = allUsers.find(u => u.portfolioSlug === slug);
-
-      if (!portfolioUser || !portfolioUser.email) {
+  try {
+    const result = await getPublicPortfolio(slug);
+    if (!result) {
         throw new Error('Portfólio não encontrado.');
-      }
-      
-      const projectsJson = localStorage.getItem(`photo-flow-projects-${portfolioUser.email}`);
-      const allProjects: Project[] = projectsJson ? JSON.parse(projectsJson) : [];
-      
-      const completedProjects = allProjects.filter(p => p.status === 'Concluído');
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...publicUser } = portfolioUser;
-      
-      setPortfolioData({ user: publicUser, projects: completedProjects });
-
-    } catch (e: any) {
-      setError(e.message || 'Ocorreu um erro ao carregar o portfólio.');
-    } finally {
-      setIsLoading(false);
     }
-  }, [slug]);
-
-  if (isLoading) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-            <p className="animate-pulse">Carregando portfólio...</p>
-        </div>
-    );
+    portfolioData = result;
+  } catch (e: any) {
+    error = e.message || 'Ocorreu um erro ao carregar o portfólio.';
   }
+
 
   if (error || !portfolioData) {
     return (

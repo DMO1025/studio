@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -28,8 +29,8 @@ export default function RegisterPage() {
         title: 'Cadastro Realizado!',
         description: 'Por favor, complete seu perfil.',
       });
-      const loginSuccess = await login(email, password);
-      if (loginSuccess) {
+      const loginResult = await login(email, password);
+      if (loginResult.success) {
         router.push('/account');
       } else {
         router.push('/login');
